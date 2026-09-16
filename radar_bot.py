@@ -639,7 +639,7 @@ def pulse_text(sym_raw):
     day = time.strftime("%Y-%m-%d", time.gmtime())
     if not q("SELECT 1 FROM pulse_history WHERE symbol=? AND day=?", sym, day, one=True):
         q("INSERT INTO pulse_history VALUES(?,?,?)", sym, day, pct)
-    hist = q("SELECT pct FROM pulse_history WHERE symbol=? ORDER BY day DESC LIMIT 14")
+    hist = q("SELECT pct FROM pulse_history WHERE symbol=? ORDER BY day DESC LIMIT 14", sym)
     strip = "".join("🟩" if x["pct"] >= 65 else ("🟥" if x["pct"] <= 35 else "🟨") for x in reversed(hist))
     t_hi, t_lo = bars[-1][1], bars[-1][2]; y_hi, y_lo = bars[-2][1], bars[-2][2]
     L = [f"🎯 <b>MARKET PULSE · {sym}</b> · ${price:,.6g} · {time.strftime('%d.%m %H:%M UTC', time.gmtime())}",
