@@ -707,7 +707,7 @@ def tvl_text(sym):
     if not tvl: return (f"💧 {sym}: в DefiLlama по тикеру не найден — либо не DeFi, "
                         f"либо проверь вручную.") + DISCLAIMER
     return (f"💧 <b>TVL · {sym}</b>\nСейчас: ${tvl['tvl']/1e6:,.0f}M\n"
-            f"7 дней: {tvl['chg7d']:+.1f}% (растёт TVL — деньги заходят в протокол; падает — выходят)\n"
+            f"7 дней: {'нет данных' if tvl['chg7d'] is None else f"{tvl['chg7d']:+.1f}%"} (изменение по данным DefiLlama)\n"
             f"Источник: DefiLlama · {time.strftime('%d.%m %H:%M UTC', time.gmtime())}" + DISCLAIMER)
 
 def llm_enabled(): return bool(OPENAI_API_KEY)
@@ -717,7 +717,9 @@ def full_analysis(sym):
     if not m: return "Не нашёл монету в топ-100."
     card, _ = coin_card(sym)
     tvl = tvl_info(sym)
-    ctx = (card or "") + ("\nTVL: НЕ ПРЕДОСТАВЛЕНО" if not tvl else f"\nTVL: ${tvl['tvl']/1e6:,.0f}M, 7д {tvl['chg7d']:+.1f}%")
+    chg7d = tvl.get("chg7d") if tvl else None
+    chg_text = "нет данных" if chg7d is None else f"{chg7d:+.1f}%"
+    ctx = (card or "") + ("\nTVL: НЕ ПРЕДОСТАВЛЕНО" if not tvl else f"\nTVL: ${tvl['tvl']/1e6:,.0f}M, 7д {chg_text}")
     bars = klines(sym); risk_block = "РИСК: НЕ ПРЕДОСТАВЛЕНО"
     if bars:  # РИСК-блок считает КОД, а не LLM (правило методологии)
         c = [b[3] for b in bars]; last = c[-1]
@@ -745,7 +747,7 @@ def full_analysis(sym):
     try:
         from openai import OpenAI
         cl = OpenAI(api_key=OPENAI_API_KEY, base_url="https://generativelanguage.googleapis.com/v1beta/openai/")
-        ans = cl.chat.completions.create(model="gemini-2.0-flash", messages=[{"role": "user", "content": prompt}], max_tokens=1200, timeout=90)
+        ans = cl.chat.completions.create(model="gemini-3.8-flash", messages=[{"role": "user", "content": prompt}], max_tokens=1200, timeout=90)
         return (ans.choices[0].message.content.strip()[:3800]
                 + "\n\n🧮 Риск-блок посчитан кодом, текст — LLM." + DISCLAIMER)
     except Exception as e:
